@@ -3,10 +3,10 @@ import hashlib
 from flask import Flask, render_template, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+application = Flask(__name__)
+application.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(application)
 
 global auth
 auth = [False]
@@ -36,12 +36,12 @@ class Section(db.Model):
     note_id = db.Column(db.Integer, nullable=False)
 
 
-@app.route("/")
+@application.route("/")
 def redirect_to_home():
     return redirect(url_for("home"))
 
 
-@app.route("/home", methods=["GET", "POST"])
+@application.route("/home", methods=["GET", "POST"])
 def home():
     all_notebooks = Notebook.query.all()
 
@@ -63,7 +63,7 @@ def home():
     return render_template("index.html", notebooks=all_notebooks, notebook_available=notebook_available)
 
 
-@app.route("/notebook/create", methods=["GET", "POST"])
+@application.route("/notebook/create", methods=["GET", "POST"])
 def create_notebook():
     if request.method == "POST":
         if request.form["name"] and not request.form["name"].isspace():
@@ -80,7 +80,7 @@ def create_notebook():
         return render_template("create_notebook.html")
 
 
-@app.route("/notebooks/<int:notebook_id>/delete", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/delete", methods=["GET", "POST"])
 def delete_notebook(notebook_id):
     if request.method == "POST":
         if Notebook.query.get(notebook_id).password is not None:
@@ -108,7 +108,7 @@ def delete_notebook(notebook_id):
                                password=password)
 
 
-@app.route("/notebooks/<int:notebook_id>/note/<int:note_id>/delete", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/note/<int:note_id>/delete", methods=["GET", "POST"])
 def delete_note(notebook_id, note_id):
     if request.method == "POST":
         Notes.query.filter_by(id=note_id).delete()
@@ -120,7 +120,7 @@ def delete_note(notebook_id, note_id):
                                note=Notes.query.get(note_id).id)
 
 
-@app.route("/notebooks/<int:notebook_id>", methods=["GET", "POST", "DELETE"])
+@application.route("/notebooks/<int:notebook_id>", methods=["GET", "POST", "DELETE"])
 def open_notebook(notebook_id):
     if Notebook.query.get(notebook_id).password is None:
         return render_template("open.html", notes=Notes.query.filter(Notes.notes_notebook == notebook_id),
@@ -133,7 +133,7 @@ def open_notebook(notebook_id):
             return redirect("/notebooks/" + str(notebook_id) + "/login")
 
 
-@app.route("/notebooks/<int:notebook_id>/login", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/login", methods=["GET", "POST"])
 def login_notebook(notebook_id):
     if request.method == "POST":
         password = hashlib.sha256(request.form["password"].encode('utf-8')).hexdigest()
@@ -148,7 +148,7 @@ def login_notebook(notebook_id):
         return render_template("notebook_login.html", notebook=Notebook.query.get(notebook_id))
 
 
-@app.route("/notebooks/<int:notebook_id>/note/create", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/note/create", methods=["GET", "POST"])
 def create_note(notebook_id):
     if request.method == "POST":
         if request.form["name"] and not request.form["name"].isspace():
@@ -162,7 +162,7 @@ def create_note(notebook_id):
         return render_template("create_note.html", id=notebook_id)
 
 
-@app.route("/notebooks/<int:notebook_id>/note/<int:note_id>", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/note/<int:note_id>", methods=["GET", "POST"])
 def open_note(notebook_id, note_id):
     if request.method == "POST":
         Notes.query.get(note_id).name = request.form["title"]
@@ -190,7 +190,7 @@ def open_note(notebook_id, note_id):
                            sections=Section.query.filter_by(note_id=note_id))
 
 
-@app.route("/notebooks/<int:notebook_id>/edit", methods=["GET", "POST"])
+@application.route("/notebooks/<int:notebook_id>/edit", methods=["GET", "POST"])
 def edit_notebook(notebook_id):
     if request.method == "POST":
         if request.form["name"] and not request.form["name"].isspace():
@@ -204,7 +204,7 @@ def edit_notebook(notebook_id):
     return render_template("edit_notebook.html", notebook=Notebook.query.get(notebook_id))
 
 
-@app.route("/notebook/<int:notebook_id>/note/<int:note_id>/section/create", methods=["GET", "POST"])
+@application.route("/notebook/<int:notebook_id>/note/<int:note_id>/section/create", methods=["GET", "POST"])
 def create_section(notebook_id, note_id):
     if request.method == "POST":
         db.session.add(Section(name=request.form["name"], note_id=note_id))
@@ -216,7 +216,7 @@ def create_section(notebook_id, note_id):
     return render_template("create_section.html", notebook=notebook_id, note=note_id)
 
 
-@app.route("/notebook/<int:notebook_id>/note/<int:note_id>/section/<int:section_id>/delete", methods=["GET", "POST"])
+@application.route("/notebook/<int:notebook_id>/note/<int:note_id>/section/<int:section_id>/delete", methods=["GET", "POST"])
 def delete_section(notebook_id, note_id, section_id):
     if request.method == "POST":
         Section.query.filter_by(id=section_id).delete()
@@ -228,4 +228,4 @@ def delete_section(notebook_id, note_id, section_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    application.run(debug=True)
